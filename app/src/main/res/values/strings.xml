@@ -1,3 +1,32 @@
 <resources>
     <string name="app_name">UnipiPLIShopping</string>
+
+
+    <!-- Log in -->
+    <string name="loginTextView">Login</string>
+    <string name="login_text">Login</string>
+    <string name="hint_email">Email</string>
+    <string name="hint_password">Password</string>
+    <string name="new_user_text">New user?</string>
+
+    <!-- Register -->
+    <string name="register_text">Register</string>
+    <string name="emailText2">Email</string>
+    <string name="passwordText2">Password</string>
+    <string name="button_register">Register</string>
+    <string name="already_a_user_text">Already a user?</string>
+
+    <!-- Bottom Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_cart">Cart</string>
+    <string name="nav_notifications">Notifications</string>
+    <string name="nav_profile">Profile</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <!-- Profile Fragment-->
+    <string name="logout_button">Logout</string>
+    <string name="location_switch">Location</string>
+
 </resources>
