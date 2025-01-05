@@ -1,8 +1,12 @@
 package com.unipi.george.unipiplishopping;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.Bundle;
 
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
@@ -12,6 +16,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -23,6 +28,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.GeoPoint;
+import com.google.firestore.admin.v1.Index;
 import com.squareup.picasso.Picasso;
 
 import java.util.List;
@@ -51,6 +57,19 @@ public class CartFragment extends Fragment {
         user = auth.getCurrentUser();
         if (user != null) {
             userId = user.getUid();
+        }
+    }
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("UserSettings", Context.MODE_PRIVATE);
+        boolean isDarkTheme = sharedPreferences.getBoolean("isDarkTheme", false);
+
+        if (isDarkTheme) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
         }
     }
 
@@ -166,9 +185,64 @@ public class CartFragment extends Fragment {
         buyButton.setLayoutParams(buttonParams);
         buyButton.setText("Αγορά");
         buyButton.setOnClickListener(v -> {
-            Toast.makeText(getContext(), "Το προϊόν " + name + " επιλέχθηκε για αγορά!", Toast.LENGTH_SHORT).show();
-            // Εδώ μπορείς να προσθέσεις επιπλέον λειτουργικότητα (π.χ. προσθήκη σε καλάθι)
+            // Δημιουργία διαλόγου για εισαγωγή ονοματεπώνυμου
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            builder.setTitle("Ολοκλήρωση Παραγγελίας");
+
+            // Προσθήκη EditText για το ονοματεπώνυμο
+            final EditText input = new EditText(getContext());
+            input.setHint("Εισάγετε το ονοματεπώνυμό σας");
+
+            // Φόρτωση ονοματεπώνυμου από SharedPreferences
+            String savedName = requireActivity()
+                    .getSharedPreferences("UserSettings", Context.MODE_PRIVATE)
+                    .getString("name", "");
+            input.setText(savedName); // Προσθήκη αποθηκευμένου ονόματος στο EditText
+
+            builder.setView(input);
+
+            // Προσθήκη κουμπιών
+            builder.setPositiveButton("Επιβεβαίωση", (dialog, which) -> {
+                String customerName = input.getText().toString().trim();
+                if (customerName.isEmpty()) {
+                    Toast.makeText(getContext(), "Το ονοματεπώνυμο είναι απαραίτητο!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                // Δημιουργία παραγγελίας
+                String orderId = code; // Μπορείς να αλλάξεις αυτό ανάλογα με τις ανάγκες σου
+                db.collection("orders")
+                        .whereEqualTo("productCode", orderId)
+                        .whereEqualTo("customerName", customerName)
+                        .get()
+                        .addOnSuccessListener(queryDocumentSnapshots -> {
+                            if (!queryDocumentSnapshots.isEmpty()) {
+                                // Η παραγγελία υπάρχει ήδη
+                                Toast.makeText(getContext(), "Η παραγγελία υπάρχει ήδη!", Toast.LENGTH_SHORT).show();
+                            } else {
+                                // Δημιουργία νέας παραγγελίας
+                                db.collection("orders")
+                                        .add(new Order(customerName, userId, code, documentId, Timestamp.now()))
+                                        .addOnSuccessListener(documentReference -> {
+                                            Toast.makeText(getContext(), "Η παραγγελία ολοκληρώθηκε!", Toast.LENGTH_SHORT).show();
+                                        })
+                                        .addOnFailureListener(e -> {
+                                            Toast.makeText(getContext(), "Αποτυχία αποθήκευσης παραγγελίας!", Toast.LENGTH_SHORT).show();
+                                            Log.e(TAG, "Error saving order", e);
+                                        });
+                            }
+                        })
+                        .addOnFailureListener(e -> {
+                            Toast.makeText(getContext(), "Σφάλμα κατά την αναζήτηση παραγγελίας!", Toast.LENGTH_SHORT).show();
+                            Log.e(TAG, "Error checking order existence", e);
+                        });
+            });
+
+            builder.setNegativeButton("Ακύρωση", (dialog, which) -> dialog.cancel());
+            builder.show();
         });
+
+
 
         // Προσθήκη της εικόνας και του κουμπιού στο κάθετο Layout
         imageAndButtonLayout.addView(imageView);
@@ -235,6 +309,55 @@ public class CartFragment extends Fragment {
 
         cardView.addView(horizontalLayout);
         linearLayout.addView(cardView);
+    }
+
+    public class Order {
+        private String customerName;
+        private String customerId;
+        private String productCode;
+        private String documentId; // Νέο πεδίο για το document ID
+        private Timestamp timestamp;
+
+        public Order(String customerName,String customerId, String productCode, String documentId, Timestamp timestamp) {
+            this.customerName = customerName;
+            this.customerId = customerId;
+            this.productCode = productCode;
+            this.documentId = documentId;
+            this.timestamp = timestamp;
+        }
+
+        // Getters and setters
+        public String getCustomerName() {
+            return customerName;
+        }
+
+        public void setCustomerName(String customerName) {
+            this.customerName = customerName;
+        }
+
+        public String getProductCode() {
+            return productCode;
+        }
+
+        public void setProductCode(String productCode) {
+            this.productCode = productCode;
+        }
+
+        public String getDocumentId() {
+            return documentId;
+        }
+
+        public void setDocumentId(String documentId) {
+            this.documentId = documentId;
+        }
+
+        public Timestamp getTimestamp() {
+            return timestamp;
+        }
+
+        public void setTimestamp(Timestamp timestamp) {
+            this.timestamp = timestamp;
+        }
     }
 
 

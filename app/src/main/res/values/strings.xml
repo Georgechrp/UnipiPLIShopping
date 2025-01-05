@@ -28,5 +28,11 @@
     <!-- Profile Fragment-->
     <string name="logout_button">Logout</string>
     <string name="location_switch">Location</string>
+    <string name="notifications_switch">Notifications</string>
+    <string name="profileText">Profile Settings</string>
+    <string name="hint_fullname">Full Name</string>
+    <string name="save_changes">Save Changes</string>
+    <string name="Light_Theme">Light Theme</string>
+    <string name="Dark_Theme">Dark Theme</string>
 
 </resources>

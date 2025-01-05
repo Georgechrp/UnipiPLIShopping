@@ -12,7 +12,7 @@
         android:layout_height="wrap_content"
         android:background="@drawable/rounded_background"
         android:padding="12dp"
-        android:text="Ομορφο TextView"
+        android:text="@string/profileText"
         android:textColor="#FFFFFF"
         android:textSize="18sp"
         android:shadowColor="#000000"
@@ -23,20 +23,59 @@
         android:textStyle="bold"
         android:layout_marginTop="32dp"
         android:layout_marginBottom="16dp" />
+    <EditText
+        android:id="@+id/et_name"
+        android:hint="@string/hint_fullname"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <RadioGroup
+        android:id="@+id/rg_colors"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <RadioButton
+            android:id="@+id/rb_light"
+            android:text="@string/Light_Theme"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+        <RadioButton
+            android:id="@+id/rb_dark"
+            android:text="@string/Dark_Theme"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+    </RadioGroup>
+
+    <SeekBar
+        android:id="@+id/sb_font_size"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/btn_save"
+        android:text="@string/save_changes"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <Switch
+        android:id="@+id/notifications_switch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/notifications_switch"
+        android:checked="false"
+        android:visibility="invisible"
+        android:layout_marginBottom="16dp"
+        tools:ignore="UseSwitchCompatOrMaterialXml" />
 
     <Switch
         android:id="@+id/location_switch"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:visibility="invisible"
         android:text="@string/location_switch"
         android:checked="false"
         android:layout_marginBottom="16dp"
         tools:ignore="UseSwitchCompatOrMaterialXml" />
-    <Button
-        android:id="@+id/btnSendNotification"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Αποστολή Ειδοποίησης" />
+
 
     <Button
         android:id="@+id/button"

@@ -1,7 +1,9 @@
 package com.unipi.george.unipiplishopping;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.View;
@@ -11,6 +13,7 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
@@ -32,6 +35,20 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+       /* if (savedInstanceState != null) {
+            // Αποτροπή αναδημιουργίας δραστηριότητας κατά την αλλαγή θέματος
+            savedInstanceState.remove("androidx.lifecycle.LifecycleDispatcher.report_fragment");
+        }*/
+
+        SharedPreferences sharedPreferences = getSharedPreferences("UserSettings", Context.MODE_PRIVATE);
+        boolean isDarkTheme = sharedPreferences.getBoolean("isDarkTheme", false);
+
+        if (isDarkTheme) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+        }
+
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
@@ -43,31 +60,9 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         }
-       /* if (checkLocationPermission()) {
-            // Έχει ήδη δοθεί η άδεια
-            accessUserLocation();
-        } else {
-            // Ζήτα άδεια από τον χρήστη
-            requestLocationPermission();
-        }*/
+
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
-        //Switch locationSwitch = findViewById(R.id.location_switch);
-
-        /*locationSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (isChecked) {
-                if (checkLocationPermission()) {
-                    // Έχει ήδη δοθεί η άδεια
-                    accessUserLocation();
-                } else {
-                    // Ζήτα άδεια από τον χρήστη
-                    requestLocationPermission();
-                }
-            } *//*else {
-                // Ο χρήστης απενεργοποίησε την τοποθεσία
-               // disableLocationAccess();
-            }*//*
-        });*/
 
         // Προσθήκη του αρχικού HomeFragment στο container
         getSupportFragmentManager().beginTransaction()
