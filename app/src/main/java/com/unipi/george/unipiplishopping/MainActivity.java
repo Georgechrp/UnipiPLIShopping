@@ -28,18 +28,15 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 
 public class MainActivity extends AppCompatActivity {
-    private FirebaseAuth auth; // Αντικείμενο για χρήστη Firebase
-    private FirebaseUser user; // Αντικείμενο που αναφέρεται στον τρέχοντα χρήστη
-    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
-    private FusedLocationProviderClient fusedLocationProviderClient;
+    private FirebaseAuth auth; // Firebase authentication object
+    private FirebaseUser user; // Firebase user object
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1; // Permission request code
+    private FusedLocationProviderClient fusedLocationProviderClient; // For accessing user's location
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-       /* if (savedInstanceState != null) {
-            // Αποτροπή αναδημιουργίας δραστηριότητας κατά την αλλαγή θέματος
-            savedInstanceState.remove("androidx.lifecycle.LifecycleDispatcher.report_fragment");
-        }*/
 
+        // Load user settings for theme preference (dark/light mode)
         SharedPreferences sharedPreferences = getSharedPreferences("UserSettings", Context.MODE_PRIVATE);
         boolean isDarkTheme = sharedPreferences.getBoolean("isDarkTheme", false);
 
@@ -53,30 +50,31 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
+        // Firebase authentication initialization
         auth = FirebaseAuth.getInstance();
         user = auth.getCurrentUser();
-        if (user == null) { // Αν δεν υπάρχει τρέχων χρήστης, μετάβαση στη Login δραστηριότητα
+
+        if (user == null) { // If no user is logged in, navigate to Login activity
             Intent intent = new Intent(this, Login.class);
             startActivity(intent);
             finish();
         }
 
+        // Initialize location services
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
-
-        // Προσθήκη του αρχικού HomeFragment στο container
+        // Set up the initial fragment (HomeFragment)
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.container, new HomeFragment())
                 .addToBackStack(null)
                 .commit();
 
-
-        // Αρχικοποίηση και λειτουργικότητα του BottomNavigationView
+        // Set up BottomNavigationView functionality
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
         bottomNavigationView.setOnNavigationItemSelectedListener(item -> {
             int itemId = item.getItemId();
 
-            // Εναλλαγή μεταξύ των fragment ανάλογα με το επιλεγμένο tab
+            // Switch between fragments based on the selected tab
             if (itemId == R.id.nav_home) {
                 getSupportFragmentManager().beginTransaction()
                         .replace(R.id.container, new HomeFragment())
@@ -103,13 +101,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-
-
     }
+
+    // Check if location permission is granted
     boolean checkLocationPermission() {
         return ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }
 
+    // Request location permission from the user
     void requestLocationPermission() {
         ActivityCompat.requestPermissions(this,
                 new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
@@ -119,27 +118,27 @@ public class MainActivity extends AppCompatActivity {
     @SuppressLint("MissingSuperCall")
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults); // Κλήση στην υπερκλάση
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults); // Call the superclass method
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Άδεια δόθηκε
+                // Permission granted
                 accessUserLocation();
             } else {
-                // Άδεια απορρίφθηκε
+                // Permission denied
                 showPermissionDeniedMessage();
             }
         }
     }
 
-
     private void accessUserLocation() {
-        // Λογική για πρόσβαση στην τοποθεσία
+        // Logic for accessing user's location
     }
 
     private void showPermissionDeniedMessage() {
-        // Δείξε ένα μήνυμα στον χρήστη
+        // Notify the user that location access is necessary
         Toast.makeText(this, "Η πρόσβαση στην τοποθεσία είναι απαραίτητη για την εφαρμογή.", Toast.LENGTH_SHORT).show();
     }
+
     private void getCurrentLocation() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             fusedLocationProviderClient.getLastLocation()
@@ -147,7 +146,7 @@ public class MainActivity extends AppCompatActivity {
                         if (location != null) {
                             double latitude = location.getLatitude();
                             double longitude = location.getLongitude();
-                            // Χρησιμοποίησε τις συντεταγμένες
+                            // Use the coordinates
                         } else {
                             Toast.makeText(this, "Δεν είναι δυνατή η εύρεση τοποθεσίας. Ενεργοποιήστε την τοποθεσία στη συσκευή σας.", Toast.LENGTH_SHORT).show();
                         }
@@ -159,16 +158,17 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void callSignOut(View view){
+    // Logout button click handler
+    public void callSignOut(View view) {
         signOut();
     }
+
     private void signOut() {
-        auth.signOut(); // Αποσύνδεση από το Firebase
+        auth.signOut(); // Sign out from Firebase
         Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(this, Login.class);
         startActivity(intent);
         finish();
 
     }
-
 }

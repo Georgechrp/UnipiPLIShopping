@@ -35,14 +35,14 @@ import androidx.cardview.widget.CardView;
 
 public class NotificationsFragment extends Fragment {
 
-    private static final String TAG = "NotificationsFragment";
+    private static final String TAG = "NotificationsFragment"; // Debugging tag
     private FirebaseFirestore db;
     private FirebaseAuth auth;
     private FirebaseUser user;
     private String userId;
     private NotificationHelper notificationHelper;
     private FusedLocationProviderClient fusedLocationClient;
-    private final Executor backgroundExecutor = Executors.newSingleThreadExecutor();
+    private final Executor backgroundExecutor = Executors.newSingleThreadExecutor(); // Background thread executor
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -50,13 +50,13 @@ public class NotificationsFragment extends Fragment {
         auth = FirebaseAuth.getInstance();
         user = auth.getCurrentUser();
         if (user != null) {
-            userId = user.getUid();
+            userId = user.getUid(); // Retrieve user ID if logged in
         } else {
             Log.e(TAG, "No user logged in");
         }
 
-        notificationHelper = new NotificationHelper(requireContext());
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext());
+        notificationHelper = new NotificationHelper(requireContext()); // Initialize helper for notifications
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext()); // Initialize location client
     }
 
     @Override
@@ -64,6 +64,7 @@ public class NotificationsFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
         db = FirebaseFirestore.getInstance();
 
+        // Check location permissions and load documents if granted
         if (!checkLocationPermissions()) {
             requestLocationPermissions();
         } else {
@@ -72,10 +73,12 @@ public class NotificationsFragment extends Fragment {
 
         return view;
     }
+
     @Override
     public void onResume() {
         super.onResume();
 
+        // Apply theme based on user preferences
         SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("UserSettings", Context.MODE_PRIVATE);
         boolean isDarkTheme = sharedPreferences.getBoolean("isDarkTheme", false);
 
@@ -85,23 +88,27 @@ public class NotificationsFragment extends Fragment {
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
         }
     }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
-        //((Executors) backgroundExecutor).shutdown();
+        // Shutdown executor if needed
     }
 
+    // Check if location permissions are granted
     private boolean checkLocationPermissions() {
         return ActivityCompat.checkSelfPermission(requireContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
                 ActivityCompat.checkSelfPermission(requireContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }
 
+    // Request location permissions
     private void requestLocationPermissions() {
         ActivityCompat.requestPermissions(requireActivity(),
                 new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION},
                 100);
     }
 
+    // Load all product documents from Firestore
     private void loadAllDocuments() {
         db.collection("products").get().addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult() != null) {
@@ -114,8 +121,7 @@ public class NotificationsFragment extends Fragment {
                         processProductsAsync(latitude, longitude, null);
                     } else {
                         Log.e(TAG, "Product location not found in Firestore for document: " + document.getId());
-                        // Κλήση για λήψη τοποθεσίας από τη συσκευή
-                        getDeviceLocation(null);
+                        getDeviceLocation(null); // Retrieve device location if product location is unavailable
                     }
                 }
             } else {
@@ -124,7 +130,6 @@ public class NotificationsFragment extends Fragment {
         });
     }
 
-
     @SuppressLint("MissingPermission")
     private void getDeviceLocation(List<String> favorites) {
         if (!checkLocationPermissions()) {
@@ -132,6 +137,7 @@ public class NotificationsFragment extends Fragment {
             return;
         }
 
+        // Retrieve device's last known location
         fusedLocationClient.getLastLocation().addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult() != null) {
                 Location location = task.getResult();
@@ -149,17 +155,16 @@ public class NotificationsFragment extends Fragment {
         });
     }
 
-    // Μέσα στην κλάση NotificationsFragment
     private void processProductsAsync(double userLatitude, double userLongitude, List<String> favorites) {
         backgroundExecutor.execute(() -> {
             db.collection("products").get().addOnCompleteListener(productTask -> {
                 if (productTask.isSuccessful() && productTask.getResult() != null) {
                     requireActivity().runOnUiThread(() -> {
                         LinearLayout linearLayoutData = requireView().findViewById(R.id.linearLayoutData);
-                        linearLayoutData.removeAllViews(); // Καθαρισμός πριν από την προσθήκη νέων καρτών
+                        linearLayoutData.removeAllViews(); // Clear previous product cards
                     });
 
-                    int notificationCount = 0; // Μετρητής για τις ειδοποιήσεις
+                    int notificationCount = 0; // Counter for notifications
 
                     for (QueryDocumentSnapshot document : productTask.getResult()) {
                         GeoPoint locationShop = document.getGeoPoint("location");
@@ -172,17 +177,17 @@ public class NotificationsFragment extends Fragment {
                         float[] results = new float[1];
                         Location.distanceBetween(userLatitude, userLongitude, productLatitude, productLongitude, results);
 
-                        // Έλεγχος για απόσταση
-                        if (results[0] <= 200) { // Φιλτράρισμα προϊόντων σε απόσταση 200 μέτρων
+                        // Filter products within 200 meters
+                        if (results[0] <= 200) {
                             String name = document.getString("name");
                             String description = document.getString("description");
 
-                            // Προσθήκη στο UI
+                            // Add product to UI
                             requireActivity().runOnUiThread(() ->
                                     addCardToLayout(name, description, productLatitude, productLongitude)
                             );
 
-                            // Δημιουργία ειδοποίησης μόνο για αυτά που πληρούν τα κριτήρια
+                            // Send notification for nearby products
                             if (name != null) {
                                 String notificationMessage = name + " βρίσκεται κοντά σας.";
                                 requireActivity().runOnUiThread(() ->
@@ -191,7 +196,7 @@ public class NotificationsFragment extends Fragment {
                                                 notificationMessage
                                         )
                                 );
-                                notificationCount++; // Αύξηση του μετρητή ειδοποιήσεων
+                                notificationCount++;
                             }
                         }
                     }
@@ -208,9 +213,6 @@ public class NotificationsFragment extends Fragment {
             });
         });
     }
-
-
-
 
     private void addCardToLayout(String name, String description, double latitude, double longitude) {
         LinearLayout linearLayoutData = requireView().findViewById(R.id.linearLayoutData);
@@ -230,14 +232,14 @@ public class NotificationsFragment extends Fragment {
         cardContentLayout.setOrientation(LinearLayout.VERTICAL);
         cardContentLayout.setPadding(16, 16, 16, 16);
 
-        // Τίτλος προϊόντος
+        // Product title
         TextView titleTextView = new TextView(requireContext());
         titleTextView.setText(name != null ? name : "Unknown Product");
         titleTextView.setTextSize(18);
         titleTextView.setGravity(Gravity.START);
         titleTextView.setTextColor(requireContext().getColor(android.R.color.black));
 
-        // Περιγραφή προϊόντος
+        // Product description
         TextView descriptionTextView = new TextView(requireContext());
         String additionalInfo = "Το προϊόν βρίσκεται κοντά σας.";
         if (latitude != 0 && longitude != 0) {
@@ -248,12 +250,11 @@ public class NotificationsFragment extends Fragment {
         descriptionTextView.setGravity(Gravity.START);
         descriptionTextView.setTextColor(requireContext().getColor(android.R.color.darker_gray));
 
-        // Προσθήκη στο layout της κάρτας
+        // Add views to card layout
         cardContentLayout.addView(titleTextView);
         cardContentLayout.addView(descriptionTextView);
 
         cardView.addView(cardContentLayout);
         linearLayoutData.addView(cardView);
     }
-
 }

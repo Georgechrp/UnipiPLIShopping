@@ -18,7 +18,6 @@
             android:gravity="center_horizontal"
             android:layout_marginTop="40dp">
 
-            <!-- Εισαγωγή divider ως View -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"

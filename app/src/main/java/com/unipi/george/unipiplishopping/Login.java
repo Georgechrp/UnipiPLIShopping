@@ -59,7 +59,7 @@ public class Login extends AppCompatActivity {
                 String email = emailText.getText().toString();
                 String password = passwordText.getText().toString();
 
-                // Έλεγχοι εγκυρότητας των πεδίων εισόδου
+                // Έλεγχοι εγκυρότητας πεδίων
                 if (email.isEmpty() || password.isEmpty()) {
                     Toast.makeText(Login.this, "Please enter email and password", Toast.LENGTH_SHORT).show();
                 } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {

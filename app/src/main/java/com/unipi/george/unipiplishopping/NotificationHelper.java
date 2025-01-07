@@ -22,9 +22,6 @@ public class NotificationHelper {
         createNotificationChannel();
     }
 
-    /**
-     * Δημιουργία καναλιού ειδοποιήσεων (για Android 8.0+).
-     */
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
@@ -41,9 +38,6 @@ public class NotificationHelper {
         }
     }
 
-    /**
-     * Δημιουργία και εμφάνιση απλής ειδοποίησης.
-     */
     @SuppressLint("MissingPermission")
     public void sendSimpleNotification(String title, String message) {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)

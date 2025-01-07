@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">UnipiPLIShopping</string>
+
+    <!-- Log in -->
+    <string name="loginTextView">Anmelden</string>
+    <string name="login_text">Anmelden</string>
+    <string name="hint_email">E-Mail</string>
+    <string name="hint_password">Passwort</string>
+    <string name="new_user_text">Neuer Benutzer?</string>
+
+    <!-- Register -->
+    <string name="register_text">Registrieren</string>
+    <string name="emailText2">E-Mail</string>
+    <string name="passwordText2">Passwort</string>
+    <string name="button_register">Registrieren</string>
+    <string name="already_a_user_text">Bereits ein Benutzer?</string>
+
+    <!-- Bottom Navigation -->
+    <string name="nav_home">Startseite</string>
+    <string name="nav_cart">Warenkorb</string>
+    <string name="nav_notifications">Benachrichtigungen</string>
+    <string name="nav_profile">Profil</string>
+
+
+    <string name="hello_blank_fragment">Hallo, leeres Fragment</string>
+
+    <!-- Profile Fragment-->
+    <string name="logout_button">Abmelden</string>
+    <string name="location_switch">Standort</string>
+    <string name="notifications_switch">Benachrichtigungen</string>
+    <string name="profileText">Profileinstellungen</string>
+    <string name="hint_fullname">Vollständiger Name</string>
+    <string name="save_changes">Änderungen speichern</string>
+    <string name="Light_Theme">Helles Thema</string>
+    <string name="Dark_Theme">Dunkles Thema</string>
+</resources>

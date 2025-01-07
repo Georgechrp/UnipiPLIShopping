@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">UnipiPLIShopping</string>
+
+    <!-- Log in -->
+    <string name="loginTextView">Σύνδεση</string>
+    <string name="login_text">Σύνδεση</string>
+    <string name="hint_email">Email</string>
+    <string name="hint_password">Κωδικός</string>
+    <string name="new_user_text">Νέος χρήστης;</string>
+
+    <!-- Register -->
+    <string name="register_text">Εγγραφή</string>
+    <string name="emailText2">Email</string>
+    <string name="passwordText2">Κωδικός</string>
+    <string name="button_register">Εγγραφή</string>
+    <string name="already_a_user_text">Ήδη χρήστης;</string>
+
+    <!-- Bottom Navigation -->
+    <string name="nav_home">Αρχική</string>
+    <string name="nav_cart">Καλάθι</string>
+    <string name="nav_notifications">Ειδοποιήσεις</string>
+    <string name="nav_profile">Προφίλ</string>
+
+
+    <string name="hello_blank_fragment">Γεια σου, κενό fragment</string>
+
+    <!-- Profile Fragment-->
+    <string name="logout_button">Αποσύνδεση</string>
+    <string name="location_switch">Τοποθεσία</string>
+    <string name="notifications_switch">Ειδοποιήσεις</string>
+    <string name="profileText">Ρυθμίσεις Προφίλ</string>
+    <string name="hint_fullname">Ονοματεπώνυμο</string>
+    <string name="save_changes">Αποθήκευση αλλαγών</string>
+    <string name="Light_Theme">Φωτεινό Θέμα</string>
+    <string name="Dark_Theme">Σκοτεινό Θέμα</string>
+</resources>

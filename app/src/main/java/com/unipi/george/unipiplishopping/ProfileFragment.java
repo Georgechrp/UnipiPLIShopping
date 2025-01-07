@@ -21,6 +21,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioGroup;
+import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.Toast;
 
@@ -38,6 +39,7 @@ public class ProfileFragment extends Fragment {
     private String mParam2;
     private boolean isDarkThemeSelected;
 
+    // ActivityResultLauncher for location permissions
     private final ActivityResultLauncher<String[]> locationPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
                 Boolean fineLocationGranted = result.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false);
@@ -52,6 +54,7 @@ public class ProfileFragment extends Fragment {
                 }
             });
 
+    // ActivityResultLauncher for notification permissions
     private final ActivityResultLauncher<String> notificationPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
                 if (isGranted) {
@@ -62,7 +65,7 @@ public class ProfileFragment extends Fragment {
             });
 
     public ProfileFragment() {
-        // Απαιτείται κενός constructor
+        // Default constructor
     }
 
     public static ProfileFragment newInstance(String param1, String param2) {
@@ -82,7 +85,7 @@ public class ProfileFragment extends Fragment {
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
 
-        // Έλεγχος άδειας ειδοποιήσεων
+        // Check for notification permissions
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                 ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
@@ -93,78 +96,84 @@ public class ProfileFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_profile, container, false);
 
-        // Αρχικοποίηση SharedPreferences
+        // Initialize SharedPreferences
         sharedPreferences = requireActivity().getSharedPreferences("UserSettings", Context.MODE_PRIVATE);
 
-        // Εύρεση του EditText για το όνομα
+        // Find views
         etName = view.findViewById(R.id.et_name);
-
-        // Φόρτωση δεδομένων από SharedPreferences
-        loadPreferences();
-
-        // Εύρεση του RadioGroup για την επιλογή θέματος
         rgColors = view.findViewById(R.id.rg_colors);
+        SeekBar fontSizeSeekBar = view.findViewById(R.id.sb_font_size);
+        Button saveButton = view.findViewById(R.id.btn_save);
+        Button logoutButton = view.findViewById(R.id.button);
 
-        // Φόρτωση της αποθηκευμένης επιλογής θέματος
+        // Load preferences and theme
+        loadPreferences(view);
         loadThemePreference();
 
-        // Αποθήκευση προσωρινής επιλογής θέματος κατά την αλλαγή του RadioButton
+        // Listener for theme selection
         rgColors.setOnCheckedChangeListener((group, checkedId) -> {
-            if (checkedId == R.id.rb_light) {
-                isDarkThemeSelected = false;
-            } else if (checkedId == R.id.rb_dark) {
-                isDarkThemeSelected = true;
+            isDarkThemeSelected = (checkedId == R.id.rb_dark);
+        });
+
+        // Listener for font size adjustment
+        fontSizeSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                etName.setTextSize(progress);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                // No action needed
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                // No action needed
             }
         });
 
-        // Αποθήκευση όταν ο χρήστης πατήσει το κουμπί Save
-        Button saveButton = view.findViewById(R.id.btn_save);
+        // Listener for save button
         saveButton.setOnClickListener(v -> {
-            savePreferences();
+            savePreferences(view);
             applyTheme();
         });
 
-        // Λειτουργικότητα για το Logout Button
-        Button logoutButton = view.findViewById(R.id.button); // Το ID πρέπει να είναι σωστό
+        // Listener for logout button
         logoutButton.setOnClickListener(v -> {
-            FirebaseAuth.getInstance().signOut(); // Αποσύνδεση από το Firebase
+            FirebaseAuth.getInstance().signOut(); // Logout from Firebase
             Toast.makeText(requireContext(), "Αποσυνδεθήκατε.", Toast.LENGTH_SHORT).show();
 
-            // Μετάβαση στο LoginActivity
+            // Navigate to LoginActivity
             Intent intent = new Intent(requireContext(), Login.class);
             startActivity(intent);
-            requireActivity().finish(); // Τερματισμός της τρέχουσας δραστηριότητας
+            requireActivity().finish(); // Terminate current activity
         });
 
         return view;
     }
 
-    private void loadPreferences() {
-        // Φόρτωση αποθηκευμένων δεδομένων
-        String name = sharedPreferences.getString("name", "");
-        etName.setText(name);
-
-        // Φόρτωση αποθηκευμένης επιλογής θέματος
-        isDarkThemeSelected = sharedPreferences.getBoolean("isDarkTheme", false);
+    private void loadPreferences(View view) {
+        if (view == null) return; // Check for null
+        PreferencesManager preferencesManager = new PreferencesManager(requireContext());
+        etName.setText(preferencesManager.getName());
+        isDarkThemeSelected = preferencesManager.isDarkThemeSelected();
+        SeekBar fontSizeSeekBar = view.findViewById(R.id.sb_font_size);
+        etName.setTextSize(preferencesManager.getFontSize());
+        fontSizeSeekBar.setProgress(preferencesManager.getFontSize());
     }
 
-    private void savePreferences() {
-        // Αποθήκευση νέων δεδομένων
-        String name = etName.getText().toString();
-
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString("name", name);
-        editor.putBoolean("isDarkTheme", isDarkThemeSelected);
-        editor.apply();
-
+    private void savePreferences(View view) {
+        PreferencesManager preferencesManager = new PreferencesManager(requireContext());
+        preferencesManager.setName(etName.getText().toString());
+        preferencesManager.setDarkThemeSelected(isDarkThemeSelected);
+        SeekBar fontSizeSeekBar = view.findViewById(R.id.sb_font_size);
+        preferencesManager.setFontSize(fontSizeSeekBar.getProgress());
         Toast.makeText(requireContext(), "Οι ρυθμίσεις αποθηκεύτηκαν.", Toast.LENGTH_SHORT).show();
-        // Εφαρμογή θέματος
-        applyTheme();
-
     }
 
     private void loadThemePreference() {
-        // Ενημέρωση RadioGroup με βάση την αποθηκευμένη επιλογή
+        // Update RadioGroup based on saved theme
         if (isDarkThemeSelected) {
             rgColors.check(R.id.rb_dark);
         } else {
@@ -173,7 +182,7 @@ public class ProfileFragment extends Fragment {
     }
 
     private void applyTheme() {
-        // Εφαρμογή του θέματος
+        // Apply selected theme
         if (isDarkThemeSelected) {
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         } else {

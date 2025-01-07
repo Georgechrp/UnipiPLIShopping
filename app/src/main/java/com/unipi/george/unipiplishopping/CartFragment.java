@@ -43,7 +43,7 @@ public class CartFragment extends Fragment {
     private FirebaseUser user;
 
     public CartFragment() {
-        // Required empty public constructor
+
     }
 
     public static CartFragment newInstance() {
@@ -134,6 +134,11 @@ public class CartFragment extends Fragment {
     }
 
     private void addDataToView(String documentId, String code, String description, String imageURL, double latitude, double longitude, String name, String price, String releaseDate) {
+        Context context = getContext();
+        if (context == null) {
+            Log.e(TAG, "Context is null, cannot create views");
+            return;
+        }
         // Δημιουργία CardView
         CardView cardView = new CardView(getContext());
         cardView.setLayoutParams(new ViewGroup.LayoutParams(
@@ -145,7 +150,7 @@ public class CartFragment extends Fragment {
         cardView.setUseCompatPadding(true);
         cardView.setPadding(16, 16, 16, 16);
 
-        // Δημιουργία κύριου LinearLayout (οριζόντια διάταξη)
+        // οριζόντια διάταξη
         LinearLayout horizontalLayout = new LinearLayout(getContext());
         horizontalLayout.setOrientation(LinearLayout.HORIZONTAL);
         horizontalLayout.setLayoutParams(new LinearLayout.LayoutParams(
@@ -153,7 +158,7 @@ public class CartFragment extends Fragment {
                 ViewGroup.LayoutParams.WRAP_CONTENT
         ));
 
-        // Δημιουργία κάθετου Layout για την εικόνα και το κουμπί
+        // κάθετο Layout
         LinearLayout imageAndButtonLayout = new LinearLayout(getContext());
         imageAndButtonLayout.setOrientation(LinearLayout.VERTICAL);
         imageAndButtonLayout.setLayoutParams(new LinearLayout.LayoutParams(
@@ -161,21 +166,21 @@ public class CartFragment extends Fragment {
                 ViewGroup.LayoutParams.WRAP_CONTENT
         ));
 
-        // Δημιουργία ImageView για εικόνα προϊόντος
-        ImageView imageView = new ImageView(getContext());
+        // εικόνα προϊόντος
+        ImageView productImageView = new ImageView(getContext());
         LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(200, 200);
         imageParams.setMargins(0, 0, 16, 0);
-        imageView.setLayoutParams(imageParams);
-        imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        productImageView.setLayoutParams(imageParams);
+        productImageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
 
         // Φόρτωση εικόνας με Picasso
         Picasso.get()
                 .load(imageURL)
                 .placeholder(R.drawable.placeholder)
                 .error(R.drawable.errorimage)
-                .into(imageView);
+                .into(productImageView);
 
-        // Δημιουργία Button κάτω από την εικόνα
+        // Button κάτω από την εικόνα
         Button buyButton = new Button(getContext());
         LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -185,70 +190,42 @@ public class CartFragment extends Fragment {
         buyButton.setLayoutParams(buttonParams);
         buyButton.setText("Αγορά");
         buyButton.setOnClickListener(v -> {
-            // Δημιουργία διαλόγου για εισαγωγή ονοματεπώνυμου
-            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-            builder.setTitle("Ολοκλήρωση Παραγγελίας");
+            SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("UserSettings", Context.MODE_PRIVATE);
+            String fullName = sharedPreferences.getString("fullName", null);
 
-            // Προσθήκη EditText για το ονοματεπώνυμο
-            final EditText input = new EditText(getContext());
-            input.setHint("Εισάγετε το ονοματεπώνυμό σας");
+            if (fullName == null || fullName.isEmpty()) {
+                // Αν το όνομα δεν υπάρχει, εμφάνιση διαλόγου για εισαγωγή
+                AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_enter_fullname, null);
+                EditText editTextFullName = dialogView.findViewById(R.id.editTextFullName);
 
-            // Φόρτωση ονοματεπώνυμου από SharedPreferences
-            String savedName = requireActivity()
-                    .getSharedPreferences("UserSettings", Context.MODE_PRIVATE)
-                    .getString("name", "");
-            input.setText(savedName); // Προσθήκη αποθηκευμένου ονόματος στο EditText
-
-            builder.setView(input);
-
-            // Προσθήκη κουμπιών
-            builder.setPositiveButton("Επιβεβαίωση", (dialog, which) -> {
-                String customerName = input.getText().toString().trim();
-                if (customerName.isEmpty()) {
-                    Toast.makeText(getContext(), "Το ονοματεπώνυμο είναι απαραίτητο!", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                // Δημιουργία παραγγελίας
-                String orderId = code; // Μπορείς να αλλάξεις αυτό ανάλογα με τις ανάγκες σου
-                db.collection("orders")
-                        .whereEqualTo("productCode", orderId)
-                        .whereEqualTo("customerName", customerName)
-                        .get()
-                        .addOnSuccessListener(queryDocumentSnapshots -> {
-                            if (!queryDocumentSnapshots.isEmpty()) {
-                                // Η παραγγελία υπάρχει ήδη
-                                Toast.makeText(getContext(), "Η παραγγελία υπάρχει ήδη!", Toast.LENGTH_SHORT).show();
+                builder.setView(dialogView)
+                        .setTitle("Εισάγετε το Ονοματεπώνυμό σας")
+                        .setPositiveButton("Αποθήκευση", (dialog, which) -> {
+                            String enteredName = editTextFullName.getText().toString().trim();
+                            if (!enteredName.isEmpty()) {
+                                // Αποθήκευση στο SharedPreferences
+                                sharedPreferences.edit().putString("fullName", enteredName).apply();
+                                // Εκκίνηση διαδικασίας αγοράς
+                                processOrder(enteredName, name, code, documentId);
                             } else {
-                                // Δημιουργία νέας παραγγελίας
-                                db.collection("orders")
-                                        .add(new Order(customerName, userId, code, documentId, Timestamp.now()))
-                                        .addOnSuccessListener(documentReference -> {
-                                            Toast.makeText(getContext(), "Η παραγγελία ολοκληρώθηκε!", Toast.LENGTH_SHORT).show();
-                                        })
-                                        .addOnFailureListener(e -> {
-                                            Toast.makeText(getContext(), "Αποτυχία αποθήκευσης παραγγελίας!", Toast.LENGTH_SHORT).show();
-                                            Log.e(TAG, "Error saving order", e);
-                                        });
+                                Toast.makeText(getContext(), "Το όνομα δεν μπορεί να είναι κενό!", Toast.LENGTH_SHORT).show();
                             }
                         })
-                        .addOnFailureListener(e -> {
-                            Toast.makeText(getContext(), "Σφάλμα κατά την αναζήτηση παραγγελίας!", Toast.LENGTH_SHORT).show();
-                            Log.e(TAG, "Error checking order existence", e);
-                        });
-            });
+                        .setNegativeButton("Ακύρωση", (dialog, which) -> dialog.dismiss());
 
-            builder.setNegativeButton("Ακύρωση", (dialog, which) -> dialog.cancel());
-            builder.show();
+                AlertDialog dialog = builder.create();
+                dialog.show();
+            } else {
+                // Εκκίνηση διαδικασίας αγοράς αν το όνομα υπάρχει
+                processOrder(fullName, name, code, documentId);
+            }
         });
 
 
-
-        // Προσθήκη της εικόνας και του κουμπιού στο κάθετο Layout
-        imageAndButtonLayout.addView(imageView);
+        imageAndButtonLayout.addView(productImageView);
         imageAndButtonLayout.addView(buyButton);
 
-        // Δημιουργία κάθετου LinearLayout για το κείμενο
         LinearLayout verticalLayout = new LinearLayout(getContext());
         verticalLayout.setOrientation(LinearLayout.VERTICAL);
         verticalLayout.setLayoutParams(new LinearLayout.LayoutParams(
@@ -257,20 +234,18 @@ public class CartFragment extends Fragment {
                 1
         ));
 
-        // Δημιουργία ImageView για την καρδιά (αγαπημένα)
-        ImageView iconView = new ImageView(getContext());
+        // ImageView για την καρδιά (αγαπημένα)
+        ImageView favoriteIconView = new ImageView(getContext());
         LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(50, 50);
         iconParams.setMargins(0, 0, 16, 0);
-        iconView.setLayoutParams(iconParams);
-
-        // Αρχικό εικονίδιο
-        iconView.setImageResource(R.drawable.heart2); // Υποθέτουμε ότι είναι ήδη στα αγαπημένα
-        iconView.setOnClickListener(v -> {
+        favoriteIconView.setLayoutParams(iconParams);
+        favoriteIconView.setImageResource(R.drawable.heart2); // Υποθέτουμε ότι είναι ήδη στα αγαπημένα
+        favoriteIconView.setOnClickListener(v -> {
             db.collection("users_data").document(userId)
                     .update("favorites", FieldValue.arrayRemove(documentId))
                     .addOnSuccessListener(aVoid -> {
                         Toast.makeText(getContext(), "Αφαιρέθηκε από τα αγαπημένα!", Toast.LENGTH_SHORT).show();
-                        linearLayout.removeView(cardView); // Αφαίρεση από την προβολή
+                        linearLayout.removeView(cardView);
                     })
                     .addOnFailureListener(e -> Log.e(TAG, "Failed to remove from favorites: " + e.getMessage()));
         });
@@ -297,9 +272,25 @@ public class CartFragment extends Fragment {
         dateTextView.setTextColor(ContextCompat.getColor(getContext(), R.color.black));
         dateTextView.setPadding(0, 8, 0, 0);
 
-        verticalLayout.addView(iconView); // Προσθήκη του εικονιδίου καρδιάς
+        ImageView ttsImageView = new ImageView(getContext());
+        LinearLayout.LayoutParams ttsParams = new LinearLayout.LayoutParams(50, 50);
+        ttsParams.setMargins(0, 0, 16, 0);
+        ttsImageView.setLayoutParams(ttsParams);
+        ttsImageView.setImageResource(R.drawable.volume); // Αντικατάστησε με το δικό σου icon
+        ttsImageView.setOnClickListener(v -> {
+            if (description != null && !description.isEmpty()) {
+                MyTts.speakOrPause(getContext(), description);
+            } else {
+                Toast.makeText(getContext(), "Δεν υπάρχει περιγραφή για εκφώνηση", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+
+        // Προσθήκη στοιχείων στο κάθετο Layout
+        verticalLayout.addView(favoriteIconView);
         verticalLayout.addView(nameTextView);
         verticalLayout.addView(descriptionTextView);
+        verticalLayout.addView(ttsImageView);
         verticalLayout.addView(priceTextView);
         verticalLayout.addView(dateTextView);
 
@@ -309,6 +300,24 @@ public class CartFragment extends Fragment {
 
         cardView.addView(horizontalLayout);
         linearLayout.addView(cardView);
+    }
+    private void processOrder(String fullName, String productName, String productCode, String documentId) {
+        if (userId == null) {
+            Toast.makeText(getContext(), "Πρέπει να είστε συνδεδεμένος για να αγοράσετε.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Δημιουργία παραγγελίας
+        Order order = new Order(fullName, userId, productCode, documentId, Timestamp.now());
+
+        // Αποθήκευση στη βάση δεδομένων
+        db.collection("orders")
+                .add(order)
+                .addOnSuccessListener(documentReference -> {
+                    Toast.makeText(getContext(), "Η αγορά ολοκληρώθηκε!", Toast.LENGTH_SHORT).show();
+                    Log.d(TAG, "Order saved successfully: " + documentReference.getId());
+                })
+                .addOnFailureListener(e -> Log.e(TAG, "Error saving order", e));
     }
 
     public class Order {

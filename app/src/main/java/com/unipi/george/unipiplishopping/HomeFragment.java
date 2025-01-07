@@ -1,5 +1,6 @@
 package com.unipi.george.unipiplishopping;
 
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -29,7 +30,10 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.squareup.picasso.Picasso;
 
 import android.Manifest;
+
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 public class HomeFragment extends Fragment {
@@ -105,6 +109,12 @@ public class HomeFragment extends Fragment {
     }
 
     private void addDataToView(String documentId, String code, String description, String imageURL, double latitude, double longitude, String name, String price, String releaseDate, boolean isFavorite) {
+        Context context = getContext();
+        if (context == null) {
+            Log.e(TAG, "Context is null, cannot create views");
+            return;
+        }
+
         CardView cardView = new CardView(getContext());
         cardView.setLayoutParams(new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -147,30 +157,48 @@ public class HomeFragment extends Fragment {
         }
 
         iconView.setOnClickListener(v -> {
-            if ("added".equals(iconView.getTag())) {
-                iconView.setImageResource(R.drawable.heart);
-                iconView.setTag("removed");
-                db.collection("users_data").document(userId)
-                        .update("favorites", FieldValue.arrayRemove(documentId))
-                        .addOnSuccessListener(aVoid ->
-                                Toast.makeText(getContext(), "Removed from favorites!", Toast.LENGTH_SHORT).show()
-                        )
-                        .addOnFailureListener(e ->
-                                Log.e(TAG, "Failed to remove from favorites: " + e.getMessage())
-                        );
-            } else {
-                iconView.setImageResource(R.drawable.heart2);
-                iconView.setTag("added");
-                db.collection("users_data").document(userId)
-                        .update("favorites", FieldValue.arrayUnion(documentId))
-                        .addOnSuccessListener(aVoid ->
-                                Toast.makeText(getContext(), "Added to favorites!", Toast.LENGTH_SHORT).show()
-                        )
-                        .addOnFailureListener(e ->
-                                Log.e(TAG, "Failed to add to favorites: " + e.getMessage())
-                        );
-            }
+            db.collection("users_data").document(userId).get().addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    if (!task.getResult().exists()) {
+                        // Δημιουργία νέου εγγράφου αν δεν υπάρχει
+                        db.collection("users_data").document(userId)
+                                .set(new HashMap<String, Object>() {{
+                                    put("favorites", new ArrayList<String>());
+                                }})
+                                .addOnSuccessListener(aVoid -> Log.d(TAG, "Document created successfully"))
+                                .addOnFailureListener(e -> Log.e(TAG, "Failed to create document: " + e.getMessage()));
+                    }
+
+                    // Ενημέρωση του πεδίου favorites
+                    if ("added".equals(iconView.getTag())) {
+                        iconView.setImageResource(R.drawable.heart);
+                        iconView.setTag("removed");
+                        db.collection("users_data").document(userId)
+                                .update("favorites", FieldValue.arrayRemove(documentId))
+                                .addOnSuccessListener(aVoid ->
+                                        Toast.makeText(getContext(), "Removed from favorites!", Toast.LENGTH_SHORT).show()
+                                )
+                                .addOnFailureListener(e ->
+                                        Log.e(TAG, "Failed to remove from favorites: " + e.getMessage())
+                                );
+                    } else {
+                        iconView.setImageResource(R.drawable.heart2);
+                        iconView.setTag("added");
+                        db.collection("users_data").document(userId)
+                                .update("favorites", FieldValue.arrayUnion(documentId))
+                                .addOnSuccessListener(aVoid ->
+                                        Toast.makeText(getContext(), "Added to favorites!", Toast.LENGTH_SHORT).show()
+                                )
+                                .addOnFailureListener(e ->
+                                        Log.e(TAG, "Failed to add to favorites: " + e.getMessage())
+                                );
+                    }
+                } else {
+                    Log.e(TAG, "Failed to check if document exists: " + task.getException());
+                }
+            });
         });
+
 
         TextView nameTextView = new TextView(getContext());
         nameTextView.setText(name);
@@ -200,13 +228,29 @@ public class HomeFragment extends Fragment {
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 1
         ));
+        // Δημιουργία ImageView για την εκφώνηση του description
+        ImageView ttsImageView = new ImageView(getContext());
+        LinearLayout.LayoutParams ttsParams = new LinearLayout.LayoutParams(50, 50);
+        ttsParams.setMargins(0, 0, 16, 0);
+        ttsImageView.setLayoutParams(ttsParams);
+        ttsImageView.setImageResource(R.drawable.volume); // Αντικατάστησε με το δικό σου icon
+        ttsImageView.setOnClickListener(v -> {
+            if (description != null && !description.isEmpty()) {
+                MyTts.speakOrPause(getContext(), description);
+            } else {
+                Toast.makeText(getContext(), "Δεν υπάρχει περιγραφή για εκφώνηση", Toast.LENGTH_SHORT).show();
+            }
+        });
         verticalLayout.addView(nameTextView);
         verticalLayout.addView(descriptionTextView);
+        verticalLayout.addView(ttsImageView);
         verticalLayout.addView(priceTextView);
         verticalLayout.addView(dateTextView);
 
+
         horizontalLayout.addView(imageView);
         horizontalLayout.addView(iconView);
+
         horizontalLayout.addView(verticalLayout);
 
         cardView.addView(horizontalLayout);
@@ -221,7 +265,7 @@ public class HomeFragment extends Fragment {
                     LOCATION_PERMISSION_REQUEST_CODE);
         }
 
-        // Έλεγχος άδειας ειδοποιήσεων (για Android 13 και άνω)
+        // Έλεγχος άδειας ειδοποιήσεων
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS)
                     != PackageManager.PERMISSION_GRANTED) {

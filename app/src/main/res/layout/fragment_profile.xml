@@ -48,7 +48,9 @@
     <SeekBar
         android:id="@+id/sb_font_size"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:max="30"
+        android:progress="16"/>
 
     <Button
         android:id="@+id/btn_save"
