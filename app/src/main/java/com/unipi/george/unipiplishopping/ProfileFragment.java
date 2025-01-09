@@ -1,6 +1,5 @@
 package com.unipi.george.unipiplishopping;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -20,12 +19,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.SeekBar;
-import android.widget.Switch;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 
 public class ProfileFragment extends Fragment {
@@ -40,29 +39,6 @@ public class ProfileFragment extends Fragment {
     private boolean isDarkThemeSelected;
 
     // ActivityResultLauncher for location permissions
-    private final ActivityResultLauncher<String[]> locationPermissionLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
-                Boolean fineLocationGranted = result.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false);
-                Boolean coarseLocationGranted = result.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false);
-
-                if (fineLocationGranted != null && fineLocationGranted) {
-                    Toast.makeText(requireContext(), "Η άδεια ACCESS_FINE_LOCATION δόθηκε.", Toast.LENGTH_SHORT).show();
-                } else if (coarseLocationGranted != null && coarseLocationGranted) {
-                    Toast.makeText(requireContext(), "Η άδεια ACCESS_COARSE_LOCATION δόθηκε.", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(requireContext(), "Η πρόσβαση στην τοποθεσία είναι απαραίτητη για να λειτουργήσει.", Toast.LENGTH_SHORT).show();
-                }
-            });
-
-    // ActivityResultLauncher for notification permissions
-    private final ActivityResultLauncher<String> notificationPermissionLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
-                if (isGranted) {
-                    Toast.makeText(requireContext(), "Άδεια για ειδοποιήσεις δόθηκε.", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(requireContext(), "Η άδεια για ειδοποιήσεις απορρίφθηκε.", Toast.LENGTH_SHORT).show();
-                }
-            });
 
     public ProfileFragment() {
         // Default constructor
@@ -85,11 +61,7 @@ public class ProfileFragment extends Fragment {
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
 
-        // Check for notification permissions
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
-        }
+
     }
 
     @Override
@@ -156,22 +128,55 @@ public class ProfileFragment extends Fragment {
     private void loadPreferences(View view) {
         if (view == null) return; // Check for null
         PreferencesManager preferencesManager = new PreferencesManager(requireContext());
+
+        // Ρυθμίσεις για το όνομα χρήστη
         etName.setText(preferencesManager.getName());
         isDarkThemeSelected = preferencesManager.isDarkThemeSelected();
+
+        // Ρυθμίσεις για το μέγεθος γραμματοσειράς
+        int fontSize = preferencesManager.getFontSize();
+        etName.setTextSize(fontSize);
+
+        // Εφαρμογή του μεγέθους γραμματοσειράς σε όλα τα κουμπιά και views του ProfileFragment
+        applyFontSizeToViews(view, fontSize);
+
         SeekBar fontSizeSeekBar = view.findViewById(R.id.sb_font_size);
-        etName.setTextSize(preferencesManager.getFontSize());
-        fontSizeSeekBar.setProgress(preferencesManager.getFontSize());
+        fontSizeSeekBar.setProgress(fontSize);
     }
 
     private void savePreferences(View view) {
         PreferencesManager preferencesManager = new PreferencesManager(requireContext());
         preferencesManager.setName(etName.getText().toString());
         preferencesManager.setDarkThemeSelected(isDarkThemeSelected);
+
         SeekBar fontSizeSeekBar = view.findViewById(R.id.sb_font_size);
-        preferencesManager.setFontSize(fontSizeSeekBar.getProgress());
+        int fontSize = fontSizeSeekBar.getProgress();
+        preferencesManager.setFontSize(fontSize);
+
+        // Εφαρμογή του μεγέθους γραμματοσειράς σε όλα τα κουμπιά και views του ProfileFragment
+        applyFontSizeToViews(view, fontSize);
+
         Toast.makeText(requireContext(), "Οι ρυθμίσεις αποθηκεύτηκαν.", Toast.LENGTH_SHORT).show();
     }
+    private void applyFontSizeToViews(View view, int fontSize) {
+        // Εφαρμόζουμε το μέγεθος γραμματοσειράς στα υπόλοιπα views
+        Button saveButton = view.findViewById(R.id.btn_save);
+        Button logoutButton = view.findViewById(R.id.button);
+        TextView beautifulTextView = view.findViewById(R.id.beautiful_textview);
 
+        saveButton.setTextSize(fontSize);
+        logoutButton.setTextSize(fontSize);
+        beautifulTextView.setTextSize(fontSize);
+
+        RadioGroup rgColors = view.findViewById(R.id.rg_colors);
+        for (int i = 0; i < rgColors.getChildCount(); i++) {
+            View child = rgColors.getChildAt(i);
+            if (child instanceof RadioButton) {
+                ((RadioButton) child).setTextSize(fontSize);
+            }
+        }
+        // Μπορείτε να προσθέσετε και άλλα views αν χρειάζεται
+    }
     private void loadThemePreference() {
         // Update RadioGroup based on saved theme
         if (isDarkThemeSelected) {

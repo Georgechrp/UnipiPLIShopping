@@ -64,7 +64,16 @@ public class HomeFragment extends Fragment {
             userId = user.getUid();
         }
     }
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_home, container, false);
+        db = FirebaseFirestore.getInstance();
 
+        linearLayout = view.findViewById(R.id.linearLayoutData);
+        loadAllDocuments();
+
+        return view;
+    }
     private void loadAllDocuments() {
         if (userId == null) {
             Log.e(TAG, "User not logged in");
@@ -256,55 +265,5 @@ public class HomeFragment extends Fragment {
         cardView.addView(horizontalLayout);
         linearLayout.addView(cardView);
     }
-    private void checkAndRequestPermissions() {
-        // Έλεγχος άδειας τοποθεσίας
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(requireActivity(),
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                    LOCATION_PERMISSION_REQUEST_CODE);
-        }
 
-        // Έλεγχος άδειας ειδοποιήσεων
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS)
-                    != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(requireActivity(),
-                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
-                        NOTIFICATION_PERMISSION_REQUEST_CODE);
-            }
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(getContext(), "Άδεια τοποθεσίας παραχωρήθηκε!", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(getContext(), "Η άδεια τοποθεσίας απορρίφθηκε.", Toast.LENGTH_SHORT).show();
-            }
-        }
-
-        if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(getContext(), "Άδεια ειδοποιήσεων παραχωρήθηκε!", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(getContext(), "Η άδεια ειδοποιήσεων απορρίφθηκε.", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_home, container, false);
-        db = FirebaseFirestore.getInstance();
-
-        linearLayout = view.findViewById(R.id.linearLayoutData);
-        checkAndRequestPermissions();
-        loadAllDocuments();
-
-        return view;
-    }
 }

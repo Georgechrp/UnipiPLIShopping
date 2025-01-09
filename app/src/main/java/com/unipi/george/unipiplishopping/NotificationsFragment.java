@@ -1,12 +1,15 @@
 package com.unipi.george.unipiplishopping;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,6 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -28,21 +32,25 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import android.view.Gravity;
+
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.cardview.widget.CardView;
 
 public class NotificationsFragment extends Fragment {
 
-    private static final String TAG = "NotificationsFragment"; // Debugging tag
+    private static final String TAG = "NotificationsFragment";
     private FirebaseFirestore db;
     private FirebaseAuth auth;
     private FirebaseUser user;
     private String userId;
     private NotificationHelper notificationHelper;
     private FusedLocationProviderClient fusedLocationClient;
-    private final Executor backgroundExecutor = Executors.newSingleThreadExecutor(); // Background thread executor
+    private final Executor backgroundExecutor = Executors.newSingleThreadExecutor();
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
+    private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 101;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -50,35 +58,27 @@ public class NotificationsFragment extends Fragment {
         auth = FirebaseAuth.getInstance();
         user = auth.getCurrentUser();
         if (user != null) {
-            userId = user.getUid(); // Retrieve user ID if logged in
+            userId = user.getUid();
         } else {
             Log.e(TAG, "No user logged in");
         }
-
-        notificationHelper = new NotificationHelper(requireContext()); // Initialize helper for notifications
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext()); // Initialize location client
+        notificationHelper = new NotificationHelper(requireContext());
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext());
     }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
         db = FirebaseFirestore.getInstance();
-
-        // Check location permissions and load documents if granted
-        if (!checkLocationPermissions()) {
-            requestLocationPermissions();
-        } else {
-            loadAllDocuments();
-        }
-
+        checkAndRequestPermissionsOnStart();
         return view;
     }
 
     @Override
     public void onResume() {
         super.onResume();
+        checkAndRequestPermissionsOnStart();
 
-        // Apply theme based on user preferences
         SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("UserSettings", Context.MODE_PRIVATE);
         boolean isDarkTheme = sharedPreferences.getBoolean("isDarkTheme", false);
 
@@ -89,26 +89,74 @@ public class NotificationsFragment extends Fragment {
         }
     }
 
+    private void checkAndRequestPermissionsOnStart() {
+        boolean locationPermissionGranted = hasPermission(Manifest.permission.ACCESS_FINE_LOCATION);
+        boolean notificationPermissionGranted = true;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            notificationPermissionGranted = hasPermission(Manifest.permission.POST_NOTIFICATIONS);
+        }
+
+        if (!locationPermissionGranted || !notificationPermissionGranted) {
+            if (!locationPermissionGranted) {
+                Toast.makeText(requireContext(), "Η άδεια τοποθεσίας είναι απαραίτητη για να λειτουργήσει η εφαρμογή.", Toast.LENGTH_SHORT).show();
+                requestLocationPermission();
+            }
+
+            if (!notificationPermissionGranted) {
+                Toast.makeText(requireContext(), "Η άδεια ειδοποιήσεων είναι απαραίτητη για να λειτουργήσει η εφαρμογή.", Toast.LENGTH_SHORT).show();
+                requestNotificationPermission();
+            }
+        } else {
+            loadAllDocuments();
+        }
+    }
+
+    private boolean hasPermission(String permission) {
+        return ContextCompat.checkSelfPermission(requireContext(), permission) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void requestLocationPermission() {
+        ActivityCompat.requestPermissions(
+                requireActivity(),
+                new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                LOCATION_PERMISSION_REQUEST_CODE
+        );
+    }
+
+    private void requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ActivityCompat.requestPermissions(
+                    requireActivity(),
+                    new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                    NOTIFICATION_PERMISSION_REQUEST_CODE
+            );
+        }
+    }
+
     @Override
-    public void onDestroy() {
-        super.onDestroy();
-        // Shutdown executor if needed
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(requireContext(), "Άδεια τοποθεσίας παραχωρήθηκε!", Toast.LENGTH_SHORT).show();
+                checkAndRequestPermissionsOnStart();
+            } else {
+                Toast.makeText(requireContext(), "Η άδεια τοποθεσίας απορρίφθηκε. Παρακαλώ παραχωρήστε την για να συνεχίσετε.", Toast.LENGTH_SHORT).show();
+            }
+        }
+
+        if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(requireContext(), "Άδεια ειδοποιήσεων παραχωρήθηκε!", Toast.LENGTH_SHORT).show();
+                checkAndRequestPermissionsOnStart();
+            } else {
+                Toast.makeText(requireContext(), "Η άδεια ειδοποιήσεων απορρίφθηκε. Παρακαλώ παραχωρήστε την για να συνεχίσετε.", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
-    // Check if location permissions are granted
-    private boolean checkLocationPermissions() {
-        return ActivityCompat.checkSelfPermission(requireContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(requireContext(), android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-    }
-
-    // Request location permissions
-    private void requestLocationPermissions() {
-        ActivityCompat.requestPermissions(requireActivity(),
-                new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION},
-                100);
-    }
-
-    // Load all product documents from Firestore
     private void loadAllDocuments() {
         db.collection("products").get().addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult() != null) {
@@ -121,7 +169,7 @@ public class NotificationsFragment extends Fragment {
                         processProductsAsync(latitude, longitude, null);
                     } else {
                         Log.e(TAG, "Product location not found in Firestore for document: " + document.getId());
-                        getDeviceLocation(null); // Retrieve device location if product location is unavailable
+                        getDeviceLocation(null);
                     }
                 }
             } else {
@@ -132,12 +180,6 @@ public class NotificationsFragment extends Fragment {
 
     @SuppressLint("MissingPermission")
     private void getDeviceLocation(List<String> favorites) {
-        if (!checkLocationPermissions()) {
-            Log.e(TAG, "Location permissions not granted");
-            return;
-        }
-
-        // Retrieve device's last known location
         fusedLocationClient.getLastLocation().addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult() != null) {
                 Location location = task.getResult();
@@ -149,7 +191,8 @@ public class NotificationsFragment extends Fragment {
                 Log.e(TAG, "Failed to get device location");
                 notificationHelper.sendSimpleNotification(
                         "Location Unavailable",
-                        "Please ensure your location services are enabled."
+                        "Please ensure your location services are enabled.",
+                        0
                 );
             }
         });
@@ -161,10 +204,8 @@ public class NotificationsFragment extends Fragment {
                 if (productTask.isSuccessful() && productTask.getResult() != null) {
                     requireActivity().runOnUiThread(() -> {
                         LinearLayout linearLayoutData = requireView().findViewById(R.id.linearLayoutData);
-                        linearLayoutData.removeAllViews(); // Clear previous product cards
+                        linearLayoutData.removeAllViews();
                     });
-
-                    int notificationCount = 0; // Counter for notifications
 
                     for (QueryDocumentSnapshot document : productTask.getResult()) {
                         GeoPoint locationShop = document.getGeoPoint("location");
@@ -177,36 +218,31 @@ public class NotificationsFragment extends Fragment {
                         float[] results = new float[1];
                         Location.distanceBetween(userLatitude, userLongitude, productLatitude, productLongitude, results);
 
-                        // Filter products within 200 meters
-                        if (results[0] <= 200) {
+                        if (results[0] <= 200) { // Έλεγχος απόστασης
                             String name = document.getString("name");
                             String description = document.getString("description");
 
-                            // Add product to UI
+                            // Δημιουργία μοναδικού ID για την ειδοποίηση
+                            int notificationId = document.getId().hashCode();
+
+                            // Δημιουργία CardView
                             requireActivity().runOnUiThread(() ->
                                     addCardToLayout(name, description, productLatitude, productLongitude)
                             );
 
-                            // Send notification for nearby products
+                            // Αποστολή ειδοποίησης μόνο για προϊόντα εντός 200 μέτρων
                             if (name != null) {
                                 String notificationMessage = name + " βρίσκεται κοντά σας.";
                                 requireActivity().runOnUiThread(() ->
                                         notificationHelper.sendSimpleNotification(
                                                 "Κοντινό Προϊόν",
-                                                notificationMessage
+                                                notificationMessage,
+                                                notificationId
                                         )
                                 );
-                                notificationCount++;
                             }
                         }
                     }
-
-                    int finalNotificationCount = notificationCount;
-                    requireActivity().runOnUiThread(() -> {
-                        if (finalNotificationCount == 0) {
-                            Log.d(TAG, "Δεν βρέθηκαν προϊόντα κοντά.");
-                        }
-                    });
                 } else {
                     Log.w(TAG, "Error retrieving products", productTask.getException());
                 }
@@ -232,14 +268,12 @@ public class NotificationsFragment extends Fragment {
         cardContentLayout.setOrientation(LinearLayout.VERTICAL);
         cardContentLayout.setPadding(16, 16, 16, 16);
 
-        // Product title
         TextView titleTextView = new TextView(requireContext());
         titleTextView.setText(name != null ? name : "Unknown Product");
         titleTextView.setTextSize(18);
         titleTextView.setGravity(Gravity.START);
         titleTextView.setTextColor(requireContext().getColor(android.R.color.black));
 
-        // Product description
         TextView descriptionTextView = new TextView(requireContext());
         String additionalInfo = "Το προϊόν βρίσκεται κοντά σας.";
         if (latitude != 0 && longitude != 0) {
@@ -250,7 +284,6 @@ public class NotificationsFragment extends Fragment {
         descriptionTextView.setGravity(Gravity.START);
         descriptionTextView.setTextColor(requireContext().getColor(android.R.color.darker_gray));
 
-        // Add views to card layout
         cardContentLayout.addView(titleTextView);
         cardContentLayout.addView(descriptionTextView);
 

@@ -39,7 +39,7 @@ public class NotificationHelper {
     }
 
     @SuppressLint("MissingPermission")
-    public void sendSimpleNotification(String title, String message) {
+    public void sendSimpleNotification(String title, String message, int notificationId) {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.ic_dialog_info)
                 .setContentTitle(title)
@@ -48,6 +48,8 @@ public class NotificationHelper {
                 .setAutoCancel(true);
 
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
-        notificationManager.notify((int) System.currentTimeMillis(), builder.build());
+        notificationManager.notify(notificationId, builder.build()); // Χρήση μοναδικού ID
     }
+
+
 }
