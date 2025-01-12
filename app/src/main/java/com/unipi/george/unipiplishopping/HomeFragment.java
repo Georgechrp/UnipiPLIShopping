@@ -69,12 +69,15 @@ public class HomeFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
         db = FirebaseFirestore.getInstance();
 
+        PreferencesManager preferencesManager = new PreferencesManager(requireContext());
+        int fontSize = preferencesManager.getFontSize();
+
         linearLayout = view.findViewById(R.id.linearLayoutData);
-        loadAllDocuments();
+        loadAllDocuments(fontSize);
 
         return view;
     }
-    private void loadAllDocuments() {
+    private void loadAllDocuments(int fontSize) {
         if (userId == null) {
             Log.e(TAG, "User not logged in");
             return;
@@ -105,7 +108,7 @@ public class HomeFragment extends Fragment {
 
                             boolean isFavorite = favorites != null && favorites.contains(documentId);
 
-                            addDataToView(documentId, code, description, imageURL, latitude, longitude, name, price, releaseDate, isFavorite);
+                            addDataToView(documentId, code, description, imageURL, latitude, longitude, name, price, releaseDate, isFavorite, fontSize);
                         }
                     } else {
                         Log.w(TAG, "Error retrieving products", productTask.getException());
@@ -117,7 +120,7 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    private void addDataToView(String documentId, String code, String description, String imageURL, double latitude, double longitude, String name, String price, String releaseDate, boolean isFavorite) {
+    private void addDataToView(String documentId, String code, String description, String imageURL, double latitude, double longitude, String name, String price, String releaseDate, boolean isFavorite, int fontSize) {
         Context context = getContext();
         if (context == null) {
             Log.e(TAG, "Context is null, cannot create views");
@@ -211,22 +214,22 @@ public class HomeFragment extends Fragment {
 
         TextView nameTextView = new TextView(getContext());
         nameTextView.setText(name);
-        nameTextView.setTextSize(18);
+        nameTextView.setTextSize(fontSize);
         nameTextView.setTypeface(null, Typeface.BOLD);
 
         TextView descriptionTextView = new TextView(getContext());
         descriptionTextView.setText(description);
-        descriptionTextView.setTextSize(14);
+        descriptionTextView.setTextSize(fontSize-2);
         descriptionTextView.setPadding(0, 8, 0, 8);
 
         TextView priceTextView = new TextView(getContext());
         priceTextView.setText(price);
-        priceTextView.setTextSize(16);
+        priceTextView.setTextSize(fontSize);
         priceTextView.setTextColor(ContextCompat.getColor(getContext(), R.color.teal_700));
 
         TextView dateTextView = new TextView(getContext());
         dateTextView.setText("Release Date: " + releaseDate);
-        dateTextView.setTextSize(14);
+        dateTextView.setTextSize(fontSize-2);
         dateTextView.setTextColor(ContextCompat.getColor(getContext(), R.color.black));
         dateTextView.setPadding(0, 8, 0, 0);
 

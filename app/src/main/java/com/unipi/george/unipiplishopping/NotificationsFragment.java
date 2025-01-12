@@ -70,6 +70,7 @@ public class NotificationsFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
         db = FirebaseFirestore.getInstance();
+
         checkAndRequestPermissionsOnStart();
         return view;
     }
@@ -90,6 +91,7 @@ public class NotificationsFragment extends Fragment {
     }
 
     private void checkAndRequestPermissionsOnStart() {
+
         boolean locationPermissionGranted = hasPermission(Manifest.permission.ACCESS_FINE_LOCATION);
         boolean notificationPermissionGranted = true;
 
@@ -233,15 +235,17 @@ public class NotificationsFragment extends Fragment {
                             // Αποστολή ειδοποίησης μόνο για προϊόντα εντός 200 μέτρων
                             if (name != null) {
                                 String notificationMessage = name + " βρίσκεται κοντά σας.";
-                                requireActivity().runOnUiThread(() ->
-                                        notificationHelper.sendSimpleNotification(
-                                                "Κοντινό Προϊόν",
-                                                notificationMessage,
-                                                notificationId
-                                        )
+                                Log.d(TAG, "Sending notification: " + notificationMessage);
+                                notificationHelper.sendSimpleNotification(
+                                        "Κοντινό Προϊόν",
+                                        notificationMessage,
+                                        notificationId
                                 );
+                            } else {
+                                Log.e(TAG, "Name is null. Notification not sent.");
                             }
                         }
+
                     }
                 } else {
                     Log.w(TAG, "Error retrieving products", productTask.getException());
@@ -251,6 +255,8 @@ public class NotificationsFragment extends Fragment {
     }
 
     private void addCardToLayout(String name, String description, double latitude, double longitude) {
+        PreferencesManager preferencesManager = new PreferencesManager(requireContext());
+        int fontSize = preferencesManager.getFontSize();
         LinearLayout linearLayoutData = requireView().findViewById(R.id.linearLayoutData);
 
         CardView cardView = new CardView(requireContext());
@@ -270,7 +276,7 @@ public class NotificationsFragment extends Fragment {
 
         TextView titleTextView = new TextView(requireContext());
         titleTextView.setText(name != null ? name : "Unknown Product");
-        titleTextView.setTextSize(18);
+        titleTextView.setTextSize(fontSize);
         titleTextView.setGravity(Gravity.START);
         titleTextView.setTextColor(requireContext().getColor(android.R.color.black));
 
@@ -280,9 +286,11 @@ public class NotificationsFragment extends Fragment {
             additionalInfo += String.format(" Δείτε την ακριβή τοποθεσία: Lat %.5f, Lon %.5f", latitude, longitude);
         }
         descriptionTextView.setText((description != null ? description + "\n" : "") + additionalInfo);
-        descriptionTextView.setTextSize(14);
+        descriptionTextView.setTextSize(fontSize - 2);
         descriptionTextView.setGravity(Gravity.START);
-        descriptionTextView.setTextColor(requireContext().getColor(android.R.color.darker_gray));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            descriptionTextView.setTextColor(requireContext().getColor(android.R.color.darker_gray));
+        }
 
         cardContentLayout.addView(titleTextView);
         cardContentLayout.addView(descriptionTextView);

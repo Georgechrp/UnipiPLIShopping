@@ -79,8 +79,11 @@ public class CartFragment extends Fragment {
         linearLayout = view.findViewById(R.id.linearLayoutData);
         db = FirebaseFirestore.getInstance();
 
+        PreferencesManager preferencesManager = new PreferencesManager(requireContext());
+        int fontSize = preferencesManager.getFontSize();
+
         if (userId != null) {
-            loadSavedStories();
+            loadSavedStories(fontSize);
         } else {
             Log.e(TAG, "User is not logged in");
         }
@@ -88,7 +91,7 @@ public class CartFragment extends Fragment {
         return view;
     }
 
-    private void loadSavedStories() {
+    private void loadSavedStories(int fontSize) {
         db.collection("users_data")
                 .document(userId)
                 .get()
@@ -96,7 +99,7 @@ public class CartFragment extends Fragment {
                     if (documentSnapshot.exists()) {
                         List<String> savedStories = (List<String>) documentSnapshot.get("favorites");
                         if (savedStories != null && !savedStories.isEmpty()) {
-                            fetchStoriesData(savedStories);
+                            fetchStoriesData(savedStories, fontSize);
                         } else {
                             Toast.makeText(getContext(), "Δεν έχετε αποθηκευμένες ιστορίες", Toast.LENGTH_SHORT).show();
                         }
@@ -107,7 +110,7 @@ public class CartFragment extends Fragment {
                 .addOnFailureListener(e -> Log.e(TAG, "Error retrieving data", e));
     }
 
-    private void fetchStoriesData(List<String> storyIds) {
+    private void fetchStoriesData(List<String> storyIds, int fontSize) {
         linearLayout.removeAllViews(); // Καθαρισμός της προβολής πριν τη φόρτωση
         for (String storyId : storyIds) {
             db.collection("products")
@@ -126,14 +129,14 @@ public class CartFragment extends Fragment {
                             Timestamp timestamp = documentSnapshot.getTimestamp("release_date");
                             String releaseDate = timestamp != null ? timestamp.toDate().toString() : "N/A";
 
-                            addDataToView(storyId, code, description, imageURL, latitude, longitude, name, price, releaseDate);
+                            addDataToView(storyId, code, description, imageURL, latitude, longitude, name, price, releaseDate, fontSize);
                         }
                     })
                     .addOnFailureListener(e -> Log.e(TAG, "Error retrieving story: " + storyId, e));
         }
     }
 
-    private void addDataToView(String documentId, String code, String description, String imageURL, double latitude, double longitude, String name, String price, String releaseDate) {
+    private void addDataToView(String documentId, String code, String description, String imageURL, double latitude, double longitude, String name, String price, String releaseDate, int fontSize) {
         Context context = getContext();
         if (context == null) {
             Log.e(TAG, "Context is null, cannot create views");
@@ -253,22 +256,22 @@ public class CartFragment extends Fragment {
         // Δημιουργία TextViews για όνομα, περιγραφή, τιμή και ημερομηνία
         TextView nameTextView = new TextView(getContext());
         nameTextView.setText(name);
-        nameTextView.setTextSize(18);
+        nameTextView.setTextSize(fontSize);
         nameTextView.setTypeface(null, Typeface.BOLD);
 
         TextView descriptionTextView = new TextView(getContext());
         descriptionTextView.setText(description);
-        descriptionTextView.setTextSize(14);
+        descriptionTextView.setTextSize(fontSize-2);
         descriptionTextView.setPadding(0, 8, 0, 8);
 
         TextView priceTextView = new TextView(getContext());
         priceTextView.setText(price);
-        priceTextView.setTextSize(16);
+        priceTextView.setTextSize(fontSize-2);
         priceTextView.setTextColor(ContextCompat.getColor(getContext(), R.color.teal_700));
 
         TextView dateTextView = new TextView(getContext());
         dateTextView.setText("Release Date: " + releaseDate);
-        dateTextView.setTextSize(14);
+        dateTextView.setTextSize(fontSize-2);
         dateTextView.setTextColor(ContextCompat.getColor(getContext(), R.color.black));
         dateTextView.setPadding(0, 8, 0, 0);
 
