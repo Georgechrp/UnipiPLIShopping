@@ -7,8 +7,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
 
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
+/*import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;*/
 
 public class NotificationHelper {
 
@@ -54,7 +54,7 @@ public class NotificationHelper {
     public void sendSimpleNotification(String title, String message, int notificationId) {
         String uniqueKey = title + message + notificationId;
 
-        if (shouldSendNotification(uniqueKey)) {
+        /*if (shouldSendNotification(uniqueKey)) {
             NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                     .setSmallIcon(android.R.drawable.ic_dialog_info)
                     .setContentTitle(title)
@@ -66,6 +66,6 @@ public class NotificationHelper {
             notificationManager.notify(notificationId, builder.build());
 
             markNotificationAsSent(uniqueKey);
-        }
+        }*/
     }
 }
