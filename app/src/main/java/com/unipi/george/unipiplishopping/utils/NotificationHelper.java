@@ -1,4 +1,4 @@
-package com.unipi.george.unipiplishopping;
+package com.unipi.george.unipiplishopping.utils;
 
 import android.annotation.SuppressLint;
 import android.app.NotificationChannel;
@@ -6,9 +6,6 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
-
-/*import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;*/
 
 public class NotificationHelper {
 

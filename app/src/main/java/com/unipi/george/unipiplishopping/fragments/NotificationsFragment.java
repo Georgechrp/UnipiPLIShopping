@@ -1,4 +1,4 @@
-package com.unipi.george.unipiplishopping;
+package com.unipi.george.unipiplishopping.fragments;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -28,6 +28,9 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.unipi.george.unipiplishopping.utils.PreferencesManager;
+import com.unipi.george.unipiplishopping.R;
+import com.unipi.george.unipiplishopping.utils.NotificationHelper;
 
 import java.util.List;
 import java.util.concurrent.Executor;

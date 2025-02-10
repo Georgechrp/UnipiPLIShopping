@@ -1,4 +1,4 @@
-package com.unipi.george.unipiplishopping;
+package com.unipi.george.unipiplishopping.utils;
 
 import android.content.Context;
 import android.content.SharedPreferences;

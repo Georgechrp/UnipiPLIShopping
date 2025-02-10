@@ -21,10 +21,10 @@
         android:enableOnBackInvokedCallback="true"> <!-- Προστέθηκε εδώ -->
 
         <activity
-            android:name=".Register"
+            android:name=".auth.Register"
             android:exported="false" />
         <activity
-            android:name=".Login"
+            android:name=".auth.Login"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

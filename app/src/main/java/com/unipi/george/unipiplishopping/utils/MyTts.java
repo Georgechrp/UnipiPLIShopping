@@ -1,14 +1,8 @@
-package com.unipi.george.unipiplishopping;
+package com.unipi.george.unipiplishopping.utils;
 
 import android.content.Context;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
-
-import java.util.Locale;
-import android.content.Context;
-import android.speech.tts.TextToSpeech;
-import android.util.Log;
-
 import java.util.Locale;
 
 public class MyTts {
@@ -40,12 +34,12 @@ public class MyTts {
         isSpeaking = true;
     }
 
-    public static void shutdown() {
+/*    public static void shutdown() {
         if (tts != null) {
             tts.stop();
             tts.shutdown();
             tts = null;
         }
         isSpeaking = false;
-    }
+    }*/
 }

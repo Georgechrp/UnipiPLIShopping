@@ -1,19 +1,13 @@
-package com.unipi.george.unipiplishopping;
+package com.unipi.george.unipiplishopping.fragments;
 
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatDelegate;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
-import android.Manifest;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,6 +20,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.unipi.george.unipiplishopping.auth.Login;
+import com.unipi.george.unipiplishopping.utils.PreferencesManager;
+import com.unipi.george.unipiplishopping.R;
 
 public class ProfileFragment extends Fragment {
 

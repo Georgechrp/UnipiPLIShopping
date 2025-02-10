@@ -1,13 +1,10 @@
-package com.unipi.george.unipiplishopping;
+package com.unipi.george.unipiplishopping.fragments;
 
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.graphics.Typeface;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
@@ -28,11 +25,11 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.squareup.picasso.Picasso;
-
-import android.Manifest;
+import com.unipi.george.unipiplishopping.utils.MyTts;
+import com.unipi.george.unipiplishopping.utils.PreferencesManager;
+import com.unipi.george.unipiplishopping.R;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
